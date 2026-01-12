@@ -1,0 +1,290 @@
+}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="monetag" content="a38935405607022f07f66c4b716f0ebe"><meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Click one - Fixed History & Withdraw</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f4f6f8; display: flex; justify-content: center; min-height: 100vh; }
+        .app-container { width: 100%; max-width: 450px; background-color: #fff; box-shadow: 0 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; min-height: 100vh; position: relative; }
+        
+        /* Header */
+        .header { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 25px 20px; border-bottom-left-radius: 25px; border-bottom-right-radius: 25px; }
+        .balance-box { background: white; padding: 15px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; color: #333; margin-top: 15px; }
+        .balance-amount { font-size: 24px; font-weight: 800; color: #2c3e50; }
+
+        /* Menu */
+        .menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding: 25px; }
+        .menu-item { display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; padding: 15px 5px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); cursor: pointer; border: 1px solid #f0f0f0; transition: 0.2s; }
+        .menu-item:active { transform: scale(0.95); }
+        .icon-circle { width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; color: white; font-size: 20px; }
+        .menu-text { font-size: 13px; font-weight: 600; color: #444; }
+
+        .c-task { background: #ff4757; } .c-profile { background: #2ed573; } .c-bonus { background: #ffa502; }
+        .c-top { background: #1e90ff; } .c-withdraw { background: #3742fa; } .c-history { background: #8e44ad; }
+        .c-invite { background: #05c46b; } .c-notice { background: #ff7f50; } .c-support { background: #2f3542; }
+
+        /* Modals */
+        .overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        .modal-content { width: 90%; background: #fff; padding: 25px; border-radius: 20px; text-align: center; position: relative; max-height: 80vh; overflow-y: auto; }
+        .close-btn { position: absolute; top: 10px; right: 15px; font-size: 25px; cursor: pointer; color: #aaa; }
+
+        /* History */
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 10px; border-bottom: 1px solid #eee; text-align: left; }
+        .status-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; color: white; font-weight: bold; text-transform: uppercase; margin-top: 4px; display: inline-block; }
+        .st-pending { background: #ffa502; } .st-paid { background: #3742fa; } .st-success { background: #2ecc71; }
+
+        .method-selector { display: flex; justify-content: space-around; margin: 20px 0; }
+        .method-option { border: 2px solid #eee; padding: 10px; border-radius: 10px; cursor: pointer; width: 30%; font-size: 12px; font-weight: bold; }
+        .method-option.active { border-color: #3742fa; background: #eef2ff; color: #3742fa; }
+        
+        .input-box { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 10px; outline: none; }
+        .submit-btn { width: 100%; padding: 15px; background: #3742fa; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; display: block; }
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 25px; border-radius: 30px; font-size: 14px; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 10000; }
+        .admin-test-btn { background: #e67e22; margin-top: 10px; font-size: 11px; padding: 5px 10px; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span id="topName" style="font-weight: bold;">Loading...</span>
+                <i class="fa-solid fa-circle-user fa-2xl"></i>
+            </div>
+            <div class="balance-box">
+                <div>
+                    <div style="font-size:12px; color:#888;">Available Balance</div>
+                    <div class="balance-amount" id="balanceDisplay">৳0</div>
+                </div>
+                <div style="font-size: 13px; font-weight: bold; color: #11998e;">Task: <span id="taskCount">0</span>/20</div>
+            </div>
+        </div>
+
+        <div class="menu-grid">
+            <div class="menu-item" onclick="startTask()"><div class="icon-circle c-task"><i class="fa-solid fa-play"></i></div><span class="menu-text">Start Task</span></div>
+            <div class="menu-item" onclick="openProfile()"><div class="icon-circle c-profile"><i class="fa-solid fa-user"></i></div><span class="menu-text">Profile</span></div>
+            <div class="menu-item" onclick="claimBonus()"><div class="icon-circle c-bonus"><i class="fa-solid fa-gift"></i></div><span class="menu-text">Bonus</span></div>
+            <div class="menu-item" onclick="openTopUsers()"><div class="icon-circle c-top"><i class="fa-solid fa-trophy"></i></div><span class="menu-text">Top Users</span></div>
+            <div class="menu-item" onclick="openWithdraw()"><div class="icon-circle c-withdraw"><i class="fa-solid fa-wallet"></i></div><span class="menu-text">Withdraw</span></div>
+            <div class="menu-item" onclick="openHistory()"><div class="icon-circle c-history"><i class="fa-solid fa-clock-rotate-left"></i></div><span class="menu-text">History</span></div>
+            <div class="menu-item" onclick="openInvite()"><div class="icon-circle c-invite"><i class="fa-solid fa-share-nodes"></i></div><span class="menu-text">Invite</span></div>
+            <div class="menu-item" onclick="openNotice()"><div class="icon-circle c-notice"><i class="fa-solid fa-bell"></i></div><span class="menu-text">Notice</span></div>
+            <div class="menu-item" onclick="openSupport()"><div class="icon-circle c-support"><i class="fa-solid fa-headset"></i></div><span class="menu-text">Support</span></div>
+        </div>
+    </div>
+
+    <div id="withdrawModal" class="overlay">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('withdrawModal')">&times;</span>
+            <h3>Withdraw Money</h3>
+            <div class="method-selector">
+                <div class="method-option active" onclick="setMethod('Bkash', 50, this)">Bkash</div>
+                <div class="method-option" onclick="setMethod('Nagad', 50, this)">Nagad</div>
+                <div class="method-option" onclick="setMethod('Recharge', 20, this)">Recharge</div>
+            </div>
+            <p id="minLimitText" style="font-size: 12px; color: #ff4757; margin-bottom: 15px; font-weight: bold;">Minimum: ৳50</p>
+            <input type="number" id="payNumber" class="input-box" placeholder="Enter Bkash Number">
+            <input type="number" id="payAmount" class="input-box" placeholder="Enter Amount">
+            <button class="submit-btn" onclick="processWithdraw()">Submit Withdraw</button>
+        </div>
+    </div>
+
+    <div id="historyModal" class="overlay">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('historyModal')">&times;</span>
+            <h3>Transaction History</h3>
+            <div id="historyList" style="margin-top: 15px;"></div>
+        </div>
+    </div>
+
+    <div id="inviteModal" class="overlay">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('inviteModal')">&times;</span>
+            <div class="icon-circle c-invite" style="margin: 0 auto 10px; width: 60px; height: 60px;"><i class="fa-solid fa-share-nodes fa-xl"></i></div>
+            <h3>Invite & Earn</h3>
+            <input type="text" id="shareLinkInput" class="input-box" readonly style="margin-top: 15px; text-align: center;">
+            <button class="submit-btn" style="background: #25D366;" onclick="shareToApp('whatsapp')">
+                <i class="fa-brands fa-whatsapp"></i> WhatsApp Share
+            </button>
+        </div>
+    </div>
+
+    <div id="profileModal" class="overlay">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('profileModal')">&times;</span>
+            <h3 id="profNameDisplay">User Name</h3>
+            <p id="profUserDisplay" style="color: #888;">@username</p>
+            <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
+            <div style="font-weight: bold; font-size: 20px; color: #2ecc71;">Balance: <span id="profBalanceDisplay">৳0</span></div>
+        </div>
+    </div>
+
+    <div id="topUsersModal" class="overlay">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('topUsersModal')">&times;</span>
+            <h3>Top Users</h3>
+            <div id="leaderboardList"></div>
+        </div>
+    </div>
+
+    <div id="noticeModal" class="overlay">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('noticeModal')">&times;</span>
+            <h3>Click one Notice</h3>
+            <p style="padding: 15px 0; font-weight: 600;">✅ সঠিক নিয়মে কাজ করলে 100% পেমেন্ট পাবেন✅</p>
+            <p style="color: #666; font-size: 13px;">Admin: Shamim Khan</p>
+        </div>
+    </div>
+
+    <div id="adLayer" class="overlay" style="background: #000; color: white;"><h1 id="timer">30</h1><p>Ad Running...</p></div>
+    <div id="toast" class="toast"></div>
+
+    <script>
+        let appData = JSON.parse(localStorage.getItem('earningDataV3')) || {
+            fullName: "Md. Karim",
+            userName: "@karim78",
+            balance: 100,
+            tasksCompleted: 0,
+            history: []
+        };
+
+        let currentMethod = "Bkash";
+        let currentMin = 50;
+
+        function updateUI() {
+            document.getElementById('balanceDisplay').innerText = '৳' + appData.balance;
+            document.getElementById('taskCount').innerText = appData.tasksCompleted;
+            document.getElementById('topName').innerText = appData.fullName;
+            document.getElementById('shareLinkInput').value = `https://clickone.com/join?ref=${appData.userName.replace('@','')}`;
+            saveData();
+        }
+
+        function saveData() {
+            localStorage.setItem('earningDataV3', JSON.stringify(appData));
+        }
+
+        // History Logic
+        function addHistory(type, amount, statusType, statusLabel) {
+            const id = Date.now();
+            const date = new Date().toLocaleString();
+            appData.history.unshift({ id, type, amount, date, statusType, statusLabel });
+            saveData();
+        }
+
+        function openHistory() {
+            const list = document.getElementById('historyList');
+            list.innerHTML = appData.history.length === 0 ? "<p>No History Found</p>" : "";
+            appData.history.forEach(item => {
+                let badgeClass = item.statusLabel === 'pending' ? 'st-pending' : (item.statusLabel === 'paid' ? 'st-paid' : 'st-success');
+                let adminBtn = item.statusLabel === 'pending' ? `<button class="admin-test-btn" onclick="markAsPaid(${item.id})">Admin: Mark Paid</button>` : "";
+                
+                list.innerHTML += `
+                    <div class="history-item">
+                        <div>
+                            <b>${item.type}</b><br><small>${item.date}</small><br>
+                            <span class="status-badge ${badgeClass}">${item.statusLabel}</span><br>
+                            ${adminBtn}
+                        </div>
+                        <b style="color:${item.statusType==='plus'?'green':'red'}">৳${item.statusType==='plus'?'+':'-'}${item.amount}</b>
+                    </div>`;
+            });
+            document.getElementById('historyModal').style.display = 'flex';
+        }
+
+        function markAsPaid(id) {
+            const item = appData.history.find(h => h.id === id);
+            if(item) {
+                item.statusLabel = 'paid';
+                saveData();
+                openHistory();
+                showToast("পেমেন্ট পেইড করা হয়েছে!");
+            }
+        }
+
+        // Withdraw Logic
+        function processWithdraw() {
+            const num = document.getElementById('payNumber').value;
+            const amt = parseInt(document.getElementById('payAmount').value);
+
+            if(!num || num.length !== 11) return showToast("সঠিক নম্বর দিন!");
+            if(isNaN(amt) || amt < currentMin) return showToast(`মিনিমাম ৳${currentMin} দিন!`);
+            if(amt > appData.balance) return showToast("ব্যালেন্স নেই!");
+
+            appData.balance -= amt;
+            addHistory(`Withdraw (${currentMethod})`, amt, 'minus', 'pending');
+            updateUI();
+            closeModal('withdrawModal');
+            showToast("উইথড্র রিকোয়েস্ট সফল হয়েছে!");
+        }
+
+        // Other Functions
+        function setMethod(m, min, el) {
+            currentMethod = m; currentMin = min;
+            document.querySelectorAll('.method-option').forEach(o => o.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('minLimitText').innerText = `Minimum: ৳${min}`;
+            document.getElementById('payNumber').placeholder = `Enter ${m} Number`;
+        }
+
+        function startTask() {
+            if(appData.tasksCompleted >= 20) return showToast("লিমিট শেষ!");
+            let time = 30; document.getElementById('adLayer').style.display = 'flex';
+            const itv = setInterval(() => {
+                time--; document.getElementById('timer').innerText = time;
+                if(time <= 0) {
+                    clearInterval(itv); document.getElementById('adLayer').style.display = 'none';
+                    appData.balance += 5; appData.tasksCompleted++;
+                    addHistory("Task Reward", 5, "plus", "success");
+                    updateUI(); showToast("৳৫ যোগ হয়েছে!");
+                }
+            }, 1000);
+        }
+
+        function claimBonus() {
+            const today = new Date().toDateString();
+            if(appData.lastBonus === today) return showToast("আজ নিয়েছেন!");
+            appData.balance += 10; appData.lastBonus = today;
+            addHistory("Daily Bonus", 10, "plus", "success");
+            updateUI(); showToast("৳১০ বোনাস সফল!");
+        }
+
+        function shareToApp(platform) {
+            const link = document.getElementById('shareLinkInput').value;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent('Join Click one now: ' + link)}`, '_blank');
+        }
+
+        function openProfile() {
+            document.getElementById('profNameDisplay').innerText = appData.fullName;
+            document.getElementById('profUserDisplay').innerText = appData.userName;
+            document.getElementById('profBalanceDisplay').innerText = '৳' + appData.balance;
+            document.getElementById('profileModal').style.display = 'flex';
+        }
+
+        function openTopUsers() {
+            const list = document.getElementById('leaderboardList');
+            const users = [{n: appData.fullName, b: appData.balance}, {n: "Sabbir", b: 1200}].sort((a,b)=>b.b-a.b);
+            list.innerHTML = "";
+            users.forEach((u, i) => {
+                list.innerHTML += `<div class="history-item"><span>#${i+1} ${u.n}</span><b>৳${u.b}</b></div>`;
+            });
+            document.getElementById('topUsersModal').style.display = 'flex';
+        }
+
+        function openWithdraw() { document.getElementById('withdrawModal').style.display = 'flex'; }
+        function openInvite() { document.getElementById('inviteModal').style.display = 'flex'; }
+        function openNotice() { document.getElementById('noticeModal').style.display = 'flex'; }
+        
+        function openSupport() { 
+            window.open('https://wa.me/message/PD6ADRTR3LLWA1', '_blank'); 
+        }
+        
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function showToast(m) { const t = document.getElementById('toast'); t.innerText=m; t.style.opacity=1; setTimeout(()=>t.style.opacity=0, 3000); }
+
+        updateUI();
+    </script>
+</body>
+</html> 
